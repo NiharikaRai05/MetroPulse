@@ -1,0 +1,30 @@
+# ==============================================================================
+# MetroPulse Data Cleaning Thresholds & Exclusion Policy Configuration
+# Used by dbt intermediate models via dbt project variables
+# ==============================================================================
+
+thresholds:
+  period:
+    start_timestamp: "2024-04-01 00:00:00"
+    end_timestamp: "2024-06-30 23:59:59"
+
+  duration:
+    min_seconds: 60           # Rides under 1 minute cannot be valid point-to-point transit
+    max_minutes: 360          # Rides exceeding 6 hours are meter forgotten / unclosed rides
+
+  distance:
+    min_miles: 0.1            # Trips under 0.1 miles with positive fares represent aborted meter engagements
+    max_miles: 100.0          # Max reasonable NYC tri-state single taxi trip
+
+  speed:
+    max_mph: 85.0             # Urban highway max realistic average speed (traffic + limits)
+
+  fare:
+    min_fare_amount: 3.00     # NYC Yellow Taxi base drop rate is $3.00 as of recent MTA TLC rules
+    max_fare_amount: 500.00   # Max realistic single-trip meter fare without special out-of-town charter
+    min_total_amount: 3.00
+    max_total_amount: 1000.00
+
+  passengers:
+    min_passengers: 1
+    max_passengers: 6         # Legal passenger capacity of NYC Yellow Taxi sedan / minivan

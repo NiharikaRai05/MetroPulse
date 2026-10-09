@@ -1,0 +1,111 @@
+version: 2
+
+sources:
+  - name: raw
+    description: "Immutable raw landing tables loaded from TLC Parquet/CSV, Open-Meteo API, and MTA Subway Socrata feed."
+    tables:
+      - name: yellow_trips
+        description: "Raw Yellow Taxi trip records for Q2 2024 (Apr, May, Jun)."
+        columns:
+          - name: VendorID
+            description: "Taxis service provider code."
+          - name: tpep_pickup_datetime
+            description: "Date and time when the meter was engaged."
+          - name: tpep_dropoff_datetime
+            description: "Date and time when the meter was disengaged."
+          - name: passenger_count
+            description: "The number of passengers in the vehicle."
+          - name: trip_distance
+            description: "The elapsed trip distance in miles."
+          - name: RatecodeID
+            description: "The final rate code in effect at the end of the trip."
+          - name: store_and_fwd_flag
+            description: "Flag indicating whether trip record was held in vehicle memory before transmission."
+          - name: PULocationID
+            description: "TLC Taxi Zone in which the taximeter was engaged."
+          - name: DOLocationID
+            description: "TLC Taxi Zone in which the taximeter was disengaged."
+          - name: payment_type
+            description: "Payment method code."
+          - name: fare_amount
+            description: "The time-and-distance fare calculated by the meter."
+          - name: extra
+            description: "Miscellaneous extras and surcharges."
+          - name: mta_tax
+            description: "MTA tax automatically triggered based on the metered rate."
+          - name: tip_amount
+            description: "Tip amount received (credit card only)."
+          - name: tolls_amount
+            description: "Total amount of all tolls paid in trip."
+          - name: improvement_surcharge
+            description: "TLC improvement surcharge."
+          - name: total_amount
+            description: "The total amount charged to passengers."
+          - name: congestion_surcharge
+            description: "Congestion surcharge for trips in Manhattan south of 96th St."
+          - name: Airport_fee
+            description: "Airport pickup/dropoff fee."
+          - name: _source_period
+            description: "Partition month identifier (e.g. 2024-04)."
+          - name: _loaded_at
+            description: "Timestamp when raw data was loaded into DuckDB."
+
+      - name: tlc_zones
+        description: "Official TLC Taxi Zone Lookup mapping LocationID to Borough and Zone name."
+        columns:
+          - name: LocationID
+            description: "Numeric zone identifier."
+          - name: Borough
+            description: "NYC Borough name."
+          - name: Zone
+            description: "Zone or neighborhood name."
+          - name: service_zone
+            description: "Service zone classification (e.g., Yellow Zone, Boro Zone, Airports)."
+          - name: _loaded_at
+            description: "Timestamp when raw data was loaded into DuckDB."
+
+      - name: weather_hourly
+        description: "Raw hourly historical weather observations for NYC from Open-Meteo."
+        columns:
+          - name: time
+            description: "Local observation timestamp (America/New_York)."
+          - name: temperature_2m
+            description: "Air temperature at 2 meters above ground (°C)."
+          - name: precipitation
+            description: "Total precipitation (rain + showers + snow) in millimeters."
+          - name: rain
+            description: "Rain from large scale weather systems in millimeters."
+          - name: snowfall
+            description: "Snowfall amount in centimeters."
+          - name: wind_speed_10m
+            description: "Wind speed at 10 meters above ground in km/h."
+          - name: cloud_cover
+            description: "Total cloud cover percentage."
+          - name: weather_code
+            description: "WMO weather interpretation code."
+          - name: _source_period
+            description: "Source period identifier."
+          - name: _loaded_at
+            description: "Timestamp when raw data was loaded into DuckDB."
+
+      - name: mta_subway_hourly
+        description: "Raw MTA Subway hourly ridership records from NY State Open Data (wujg-7c2s)."
+        columns:
+          - name: transit_timestamp
+            description: "Hourly timestamp of the ridership observation."
+          - name: station_complex_id
+            description: "MTA station complex identifier."
+          - name: station_complex
+            description: "Name of station complex."
+          - name: borough
+            description: "Borough where station complex is located."
+          - name: ridership
+            description: "Estimated total turnstile entries / ridership count."
+          - name: latitude
+            description: "Station latitude coordinate."
+          - name: longitude
+            description: "Station longitude coordinate."
+          - name: _source_period
+            description: "Source period identifier."
+          - name: _loaded_at
+            description: "Timestamp when raw data was loaded into DuckDB."

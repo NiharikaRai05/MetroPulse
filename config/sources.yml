@@ -1,0 +1,68 @@
+# ==============================================================================
+# MetroPulse Official Sources and Ingestion Configuration
+# Period: 2024-04-01 to 2024-06-30 (Q2 2024)
+# All tools & sources are INR 0 (Zero paid services / No API keys required)
+# ==============================================================================
+
+period:
+  start_date: "2024-04-01"
+  end_date: "2024-06-30"
+  timezone: "America/New_York"
+  description: "All records for Q2 2024; zero sampling for core metrics."
+
+sources:
+  tlc_yellow_taxi:
+    name: "TLC Yellow Taxi Trip Records"
+    landing_page: "https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page"
+    base_url: "https://d37ci6vzurychx.cloudfront.net/trip-data"
+    files:
+      - filename: "yellow_tripdata_2024-04.parquet"
+        url: "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-04.parquet"
+        period: "2024-04"
+      - filename: "yellow_tripdata_2024-05.parquet"
+        url: "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-05.parquet"
+        period: "2024-05"
+      - filename: "yellow_tripdata_2024-06.parquet"
+        url: "https://d37ci6vzurychx.cloudfront.net/trip-data/yellow_tripdata_2024-06.parquet"
+        period: "2024-06"
+    dest_subpath: "taxi"
+
+  tlc_zone_lookup:
+    name: "TLC Taxi Zone Lookup CSV"
+    url: "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zone_lookup.csv"
+    dest_filename: "taxi_zone_lookup.csv"
+    dest_subpath: "zones"
+
+  tlc_zone_shapefile:
+    name: "TLC Taxi Zones Shapefile"
+    url: "https://d37ci6vzurychx.cloudfront.net/misc/taxi_zones.zip"
+    dest_filename: "taxi_zones.zip"
+    dest_subpath: "zones"
+
+  open_meteo_weather:
+    name: "Open-Meteo Historical Weather API"
+    documentation: "https://open-meteo.com/en/docs/historical-weather-api"
+    api_endpoint: "https://archive-api.open-meteo.com/v1/archive"
+    coordinates:
+      latitude: 40.7128
+      longitude: -74.0060
+      timezone: "America/New_York"
+    hourly_variables:
+      - "temperature_2m"
+      - "precipitation"
+      - "rain"
+      - "snowfall"
+      - "wind_speed_10m"
+      - "cloud_cover"
+      - "weather_code"
+    dest_subpath: "weather"
+
+  mta_subway_ridership:
+    name: "MTA Subway Hourly Ridership 2020-2024 (Socrata wujg-7c2s)"
+    page: "https://data.ny.gov/Transportation/MTA-Subway-Hourly-Ridership-2020-2024/wujg-7c2s"
+    api_endpoint: "https://data.ny.gov/resource/wujg-7c2s.json"
+    dataset_id: "wujg-7c2s"
+    filter:
+      start_timestamp: "2024-04-01T00:00:00.000"
+      end_timestamp: "2024-06-30T23:59:59.999"
+    dest_subpath: "mta"

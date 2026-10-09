@@ -1,0 +1,209 @@
+version: 2
+
+models:
+  - name: dim_zone
+    description: "TLC Taxi Zones dimension table (LocationID 1..265)."
+    columns:
+      - name: location_id
+        description: "Primary key for taxi zone."
+        tests:
+          - unique
+          - not_null
+
+  - name: dim_date
+    description: "Calendar date dimension for Q2 2024."
+    columns:
+      - name: date_day
+        tests:
+          - unique
+          - not_null
+      - name: date_key
+        tests:
+          - unique
+          - not_null
+      - name: is_weekend
+        tests:
+          - not_null
+      - name: is_weekday
+        tests:
+          - not_null
+
+  - name: dim_hour
+    description: "Hour of day dimension (0..23)."
+    columns:
+      - name: hour_of_day
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23]
+
+  - name: dim_payment
+    description: "Payment type classification dimension."
+    columns:
+      - name: payment_type_id
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6]
+
+  - name: dim_rate
+    description: "Rate code classification dimension."
+    columns:
+      - name: rate_code_id
+        tests:
+          - unique
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 99]
+
+  - name: dim_weather
+    description: "Hourly weather dimension for NYC Q2 2024."
+    columns:
+      - name: observation_hour
+        tests:
+          - unique
+          - not_null
+
+  - name: fct_trips
+    description: "Fact table for all validated and cleaned yellow taxi trips."
+    columns:
+      - name: trip_id
+        tests:
+          - unique
+          - not_null
+      - name: pickup_location_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: location_id
+      - name: dropoff_location_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: location_id
+      - name: payment_type_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6]
+      - name: rate_code_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 99]
+      - name: pickup_date
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_day
+      - name: pickup_hour_of_day
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_hour')
+              field: hour_of_day
+
+  - name: mart_zone
+    description: "Mart zone table containing demand concentration and underserved indicators."
+    columns:
+      - name: location_id
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: location_id
+      - name: is_underserved
+        tests:
+          - not_null
+
+  - name: mart_time
+    description: "Mart time table."
+    columns:
+      - name: hour_timestamp
+        tests:
+          - unique
+          - not_null
+
+  - name: mart_weather
+    description: "Mart weather table joining weather indicators with hourly mobility metrics."
+    columns:
+      - name: observation_hour
+        tests:
+          - unique
+          - not_null
+          - relationships:
+              to: ref('dim_weather')
+              field: observation_hour
+
+  - name: mart_route_pairs
+    description: "Mart route pairs table (Origin-Destination pairs)."
+    columns:
+      - name: pickup_location_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: location_id
+      - name: dropoff_location_id
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_zone')
+              field: location_id
+      - name: trip_count
+        tests:
+          - not_null
+
+  - name: mart_cube
+    description: "Multimodal aggregation cube preserving purely additive sums and counts."
+    columns:
+      - name: date_day
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_date')
+              field: date_day
+      - name: hour_of_day
+        tests:
+          - not_null
+          - relationships:
+              to: ref('dim_hour')
+              field: hour_of_day
+      - name: payment_type_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6]
+      - name: rate_code_id
+        tests:
+          - not_null
+          - accepted_values:
+              values: [1, 2, 3, 4, 5, 6, 99]
+      - name: trip_count
+        tests:
+          - not_null
+
+  - name: mart_executive
+    description: "Executive summary pulse table."
+    columns:
+      - name: analysis_period
+        tests:
+          - unique
+          - not_null
+      - name: total_clean_trips
+        tests:
+          - not_null
+
+  - name: mart_quality
+    description: "Data quality profiling and anomaly tracking mart."
+    columns:
+      - name: issue_id
+        tests:
+          - unique
+          - not_null

@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test-and-build:
+    name: Lint, Test & dbt Build (Free Tier)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Ruff Linter
+        run: |
+          ruff check .
+
+      - name: Generate CI Sample Data & Seed DuckDB
+        run: |
+          python tests/generate_ci_sample_data.py
+
+      - name: Install DuckDB Spatial Extension & Run dbt Build
+        run: |
+          cd dbt_project
+          # Install and load spatial extension for dbt-duckdb
+          python -c "import duckdb; con = duckdb.connect('../data/metropulse.duckdb'); con.execute('INSTALL spatial; LOAD spatial;'); con.close()"
+          dbt deps --profiles-dir . || true
+          dbt build --profiles-dir .
+
+      - name: Run Python Pytest Test Suite
+        run: |
+          pytest tests/ -v --ignore=tests/test_day1_ingestion.py
+
+      - name: Test Export Pipeline
+        run: |
+          python -m export.exporter
+          test -f dashboard/data/last_refresh.json
+          test -f dashboard/data/dim_zone.parquet

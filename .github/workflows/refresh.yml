@@ -1,0 +1,71 @@
+name: Scheduled Data Refresh & Marts Export
+
+on:
+  schedule:
+    # Run weekly on Sunday at 02:00 UTC (keeps well within Free Tier 2,000 min/mo)
+    - cron: '0 2 * * 0'
+  workflow_dispatch:
+    inputs:
+      force_full_ingest:
+        description: 'Force re-download of upstream public datasets'
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  refresh-and-export:
+    name: Refresh Marts & Export Dashboard Parquet
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Data Refresh Pipeline
+        run: |
+          # If raw data not present or forced, seed or ingest lightweight marts
+          python -m export.exporter
+
+      - name: Validate Export Artifacts
+        run: |
+          python -c "
+          import json
+          from pathlib import Path
+          manifest_path = Path('dashboard/data/last_refresh.json')
+          assert manifest_path.exists(), 'Manifest missing!'
+          with open(manifest_path) as f:
+              m = json.load(f)
+          print(f'Build timestamp: {m.get(\"build_timestamp_utc\")}')
+          print(f'Total size: {m.get(\"total_bundle_size_mb\")} MB (Under 100MB: {m.get(\"is_under_100mb_limit\")})')
+          assert m.get('is_under_100mb_limit') == True, 'Bundle size exceeded 100 MB!'
+          "
+
+      - name: Commit and Push Updated Parquet & Manifest (if changed)
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add dashboard/data/*.parquet dashboard/data/*.json dashboard/data/*.geojson
+          if git diff --staged --quiet; then
+            echo "No export changes detected. Skipping commit."
+          else
+            git commit -m "chore(data): auto-refresh analytical marts and last_refresh.json [skip ci]"
+            git push
+          fi

@@ -1,0 +1,39 @@
+# Data and database storage (raw layer is immutable and kept out of Git)
+data/raw/
+data/processed/
+*.duckdb
+*.duckdb.wal
+*.zip
+
+# Ignore data parquets generally except pre-exported dashboard data
+*.parquet
+!dashboard/data/*.parquet
+!dashboard/data/*.geojson
+!dashboard/data/*.json
+
+# Python & virtual environment
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+env/
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# dbt artifacts
+dbt_project/target/
+dbt_project/dbt_packages/
+dbt_project/logs/
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+.env
